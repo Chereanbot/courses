@@ -4,8 +4,11 @@ import { rootAuthLoader } from "@clerk/remix/ssr.server";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/remix";
+import { injectSpeedInsights } from "@vercel/speed-insights";
 import "./tailwind.css";
+
+// Initialize Speed Insights
+injectSpeedInsights({ framework: 'remix' });
 
 export const loader: LoaderFunction = (args) => rootAuthLoader(args, {
   afterSignInUrl: "/dashboard",
@@ -233,7 +236,6 @@ function App() {
         <Scripts />
         <LiveReload />
         <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
