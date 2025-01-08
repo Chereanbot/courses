@@ -79,7 +79,7 @@ export default function SharedLayout({ children }: { children: React.ReactNode }
             {/* Logo - Always accessible */}
             <Link to="/" className="flex-shrink-0 flex items-center">
               <span className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-transparent bg-clip-text hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition duration-300">
-                Digital Aksumites
+                Cs Courses
               </span>
             </Link>
 

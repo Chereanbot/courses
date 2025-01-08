@@ -52,7 +52,7 @@ function App() {
               <div className="space-y-4 transform hover:scale-105 transition-transform duration-300">
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-transparent bg-clip-text animate-gradient-x">
-                    Digital Aksumite
+                    Cs Courses
                   </span>
                 </div>
                 <p className="text-gray-600 text-sm hover:text-gray-800 transition-colors duration-300">
