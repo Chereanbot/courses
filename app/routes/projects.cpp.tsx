@@ -1,29 +1,188 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "@remix-run/react";
 import SharedLayout from "~/components/SharedLayout";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Project {
+  sourceCode: string;
+  title: string;
+}
+
+interface Language {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+}
+
+type ProjectAuthCodes = {
+  [key: string]: string[];
+};
 
 export default function CppProjects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authCode, setAuthCode] = useState("");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [error, setError] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const [language, setLanguage] = useState<"en" | "am">("en");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [downloadCount, setDownloadCount] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  // Strong authorization codes for different projects
+  const projectAuthCodes: ProjectAuthCodes = {
+    "Library Management System": ["LIB2024SEC", "LIBAUTH935", "LIBSYS246"],
+    "Bank Management System": ["BANK2024X", "BANKSEC731", "BANKAUTH482"],
+    "Student Grade Management": ["GRADE2024", "STUAUTH624", "GRDSYS159"],
+    "Hospital Management System": ["HOSP2024X", "MEDAUTH837", "HSPSYS462"],
+    "Inventory Management System": ["INV2024SEC", "INVAUTH514", "INVSYS793"],
+    "Prison Management System": ["PRIS2024X", "SECAUTH628", "PRSSYS351"],
+    "Unit Converter Application": ["UNIT2024X", "CONVAUTH942", "UNTSYS175"],
+    "Learning Management System": ["LMS2024SEC", "EDUAUTH739", "LRNSYS284"],
+    "Temperature Converter": ["TEMP2024X", "TMPAUTH516", "TMPSYS843"],
+    "PDF Store Management": ["PDF2024SEC", "PDFAUTH627", "PDFSYS194"]
+  };
+
+  const translations = {
+    en: {
+      title: "C++ Projects Collection",
+      subtitle: "Explore our collection of C++ projects ranging from beginner to advanced levels.",
+      search: "Search projects...",
+      difficulty: {
+        all: "All Levels",
+        beginner: "Beginner",
+        intermediate: "Intermediate",
+        advanced: "Advanced"
+      },
+      download: "Download Source Code",
+      learnMore: "Learn More",
+      authRequired: "Authorization Required",
+      authMessage: "Please enter your authorization code to download",
+      needHelp: "Need Help?",
+      contactInfo: "Don't have a code? Contact Cherinet at:",
+      invalidCode: "Invalid authorization code. Please contact Cherinet for a valid code."
+    },
+    am: {
+      title: "የC++ ፕሮጀክቶች ስብስብ",
+      subtitle: "ከጀማሪ እስከ ከፍተኛ ደረጃ ያሉ የC++ ፕሮጀክቶችን ይመልከቱ።",
+      search: "ፕሮጀክቶችን ይፈልጉ...",
+      difficulty: {
+        all: "ሁሉም ደረጃዎች",
+        beginner: "ጀማሪ",
+        intermediate: "መካከለኛ",
+        advanced: "ከፍተኛ"
+      },
+      download: "ሶርስ ኮድ ያውርዱ",
+      learnMore: "ተጨማሪ ይወቁ",
+      authRequired: "ፈቃድ ያስፈልጋል",
+      authMessage: "እባክዎ የፈቃድ ኮድዎን ያስገቡ",
+      needHelp: "እርዳታ ይፈልጋሉ?",
+      contactInfo: "ኮድ የለዎትም? ቸሪነትን ያግኙ:",
+      invalidCode: "ልክ ያልሆነ የፈቃድ ኮድ። እባክዎ ቸሪነትን ለትክክለኛ ኮድ ያግኙ።"
+    }
+  };
+
+  const notificationTranslations = {
+    en: {
+      downloadSuccess: "Successfully downloaded",
+      downloadError: "Failed to download. Please try again.",
+      invalidCode: "Invalid authorization code. Please check and try again.",
+      tooManyAttempts: "Too many invalid attempts. Please wait before trying again.",
+      codeRequired: "Authorization code is required",
+      downloadStarted: "Download starting...",
+      projectNotFound: "Project not found",
+      networkError: "Network error. Please check your connection.",
+      downloadLimit: "Download limit reached for this project",
+    },
+    am: {
+      downloadSuccess: "በተሳካ ሁኔታ ተውርዷል",
+      downloadError: "ለማውረድ አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+      invalidCode: "ልክ ያልሆነ የፈቃድ ኮድ። እባክዎ ያረጋግጡና እንደገና ይሞክሩ።",
+      tooManyAttempts: "በጣም ብዙ ያልተሳኩ ሙከራዎች። እባክዎ ከመሞከርዎ በፊት ይጠብቁ።",
+      codeRequired: "የፈቃድ ኮድ ያስፈልጋል",
+      downloadStarted: "ማውረድ ተጀምሯል...",
+      projectNotFound: "ፕሮጀክቱ አልተገኘም",
+      networkError: "የኔትወርክ ችግር። እባክዎ ግንኙነትዎን ያረጋግጡ።",
+      downloadLimit: "ለዚህ ፕሮጀክት የማውረድ ገደብ ደርሷል",
+    }
+  } as const;
+
+  type NotificationMessageKey = keyof typeof notificationTranslations.en;
+
+  const addNotification = (type: Notification['type'], messageKey: NotificationMessageKey) => {
+    const id = Date.now().toString();
+    const message = notificationTranslations[language][messageKey];
+    setNotifications(prev => [...prev, { id, type, message }]);
+    
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
 
   const handleDownload = (sourceCode: string, title: string) => {
-    const fileName = sourceCode.split('/').pop() || 'project.cpp';
-    fetch(sourceCode)
-      .then(response => response.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      })
-      .catch(error => {
-        console.error('Download failed:', error);
-        alert('Failed to download the file. Please try again.');
-      });
+    if (downloadCount[title] >= 3) {
+      addNotification('warning', 'downloadLimit');
+      return;
+    }
+    setSelectedProject({ sourceCode, title });
+    setShowAuthModal(true);
+    setError("");
+    setAuthCode("");
+  };
+
+  const handleAuthSubmit = () => {
+    if (!authCode.trim()) {
+      addNotification('error', 'codeRequired');
+      return;
+    }
+
+    if (selectedProject && projectAuthCodes[selectedProject.title]?.includes(authCode)) {
+      addNotification('info', 'downloadStarted');
+      
+      // Proceed with download
+      const fileName = selectedProject.sourceCode.split('/').pop() || 'project.cpp';
+      fetch(selectedProject.sourceCode)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          setShowAuthModal(false);
+          addNotification('success', 'downloadSuccess');
+          
+          // Update download count
+          setDownloadCount(prev => ({
+            ...prev,
+            [selectedProject.title]: (prev[selectedProject.title] || 0) + 1
+          }));
+        })
+        .catch(error => {
+          console.error('Download failed:', error);
+          addNotification('error', 'networkError');
+        });
+    } else {
+      addNotification('error', 'invalidCode');
+    }
   };
 
   const projects = [
@@ -203,7 +362,7 @@ export default function CppProjects() {
         "Error Checking",
         "User Input Validation"
       ],
-      icon: "🔄"
+      icon: "🔄🔄"
     },
     {
       id: 8,
@@ -294,25 +453,84 @@ export default function CppProjects() {
 
   return (
     <SharedLayout>
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-transparent bg-clip-text mb-4">
-            C++ Projects
-          </h1>
-          <p className="text-gray-600 max-w-3xl mx-auto">
-            Explore our collection of C++ projects ranging from beginner to advanced levels. 
-            Each project is designed to help you master different aspects of C++ programming,
-            from basic syntax to advanced concepts like OOP, data structures, and design patterns.
-            Perfect for building your portfolio and enhancing your C++ skills.
-          </p>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto px-4 py-8 relative"
+      >
+        {/* Notifications Container */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          <AnimatePresence>
+            {notifications.map(notification => (
+              <motion.div
+                key={notification.id}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                className={`p-4 rounded-lg shadow-lg max-w-md ${
+                  notification.type === 'success' ? 'bg-green-500 text-white' :
+                  notification.type === 'error' ? 'bg-red-500 text-white' :
+                  notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                  'bg-blue-500 text-white'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {notification.type === 'success' && '✅'}
+                  {notification.type === 'error' && '❌'}
+                  {notification.type === 'warning' && '⚠️'}
+                  {notification.type === 'info' && 'ℹ️'}
+                  <span>{notification.message}</span>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
 
+        {/* Language Switcher */}
+        <div className="flex justify-end mb-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setLanguage(language === "en" ? "am" : "en")}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center gap-2"
+          >
+            {language === "en" ? "🇪🇹 አማርኛ" : "🇬🇧 English"}
+          </motion.button>
+        </div>
+
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-5xl font-bold mb-4 animate-gradient">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-transparent bg-clip-text">
+              {translations[language].title}
+            </span>
+          </h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="text-gray-600 max-w-3xl mx-auto text-lg"
+          >
+            {translations[language].subtitle}
+          </motion.p>
+        </motion.div>
+
         {/* Filters */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4 justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.6 }}
+          className="mb-8 flex flex-col md:flex-row gap-4 justify-center"
+        >
           <input
             type="text"
-            placeholder="Search projects..."
+            placeholder={translations[language].search}
             className="px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-80"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -322,17 +540,28 @@ export default function CppProjects() {
             value={selectedDifficulty}
             onChange={(e) => setSelectedDifficulty(e.target.value)}
           >
-            <option value="all">All Levels</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
+            {Object.entries(translations[language].difficulty).map(([key, value]) => (
+              <option key={key} value={key}>{value}</option>
+            ))}
           </select>
-        </div>
+        </motion.div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <div key={project.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+        {/* Projects Grid with stagger animation */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {filteredProjects.map((project, index) => (
+            <motion.div
+              key={project.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ scale: 1.02 }}
+              className="bg-white rounded-xl shadow-lg overflow-hidden group hover:shadow-2xl transition-all duration-300"
+            >
               <div className="p-6">
                 <div className="text-3xl mb-4 bg-blue-50 w-14 h-14 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   {project.icon}
@@ -389,20 +618,118 @@ export default function CppProjects() {
                     onClick={() => handleDownload(project.sourceCode, project.title)}
                     className="flex-1 text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    Download Source Code
+                    {translations[language].download}
                   </button>
                   <Link
                     to={`/projects/cpp/${project.id}`}
                     className="flex-1 text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    Learn More
+                    {translations[language].learnMore}
                   </Link>
                 </div>
+
+                {/* Add download count display in the project card */}
+                <div className="text-sm text-gray-500 mt-2">
+                  {downloadCount[project.title] > 0 && (
+                    <span>
+                      {language === "en" 
+                        ? `Downloaded ${downloadCount[project.title]} times`
+                        : `${downloadCount[project.title]} ጊ� ተውርዷል`}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
+      
+      {/* Authorization Modal */}
+      {showAuthModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-xl p-6 max-w-md w-full"
+          >
+            <h2 className="text-2xl font-bold mb-4">{translations[language].authRequired}</h2>
+            <p className="text-gray-600 mb-4">
+              {translations[language].authMessage} {selectedProject?.title}
+            </p>
+            
+            {/* Help Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mb-4">
+              <h3 className="font-semibold text-blue-800 mb-2">{translations[language].needHelp}</h3>
+              <ul className="text-blue-700 text-sm space-y-2">
+                <li>• {translations[language].contactInfo}</li>
+                <li className="pl-4">- Email: cscher331@gmail.com</li>
+                <li className="pl-4">- Phone: +251947006269</li>
+                <li className="pl-4">- Telegram: @https://t.me/Mahiyenewudi</li>
+                <li>• Codes are unique and can be used multiple times</li>
+                <li>• Please keep your authorization code secure</li>
+              </ul>
+            </div>
+
+            <motion.input
+              whileFocus={{ scale: 1.02 }}
+              type="text"
+              placeholder={language === "en" ? "Enter authorization code" : "የፈቃድ ኮድ ያስገቡ"}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              value={authCode}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAuthCode(e.target.value)}
+            />
+            
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 text-red-600 p-3 rounded-lg mb-4"
+              >
+                {error}
+              </motion.div>
+            )}
+            
+            <div className="flex gap-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleAuthSubmit}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300"
+              >
+                {translations[language].download}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowAuthModal(false)}
+                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300"
+              >
+                {language === "en" ? "Cancel" : "ይቅር"}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      <style>{`
+        .animate-gradient {
+          background-size: 300%;
+          -webkit-animation: animatedgradient 6s ease infinite alternate;
+          animation: animatedgradient 6s ease infinite alternate;
+        }
+
+        @keyframes animatedgradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
     </SharedLayout>
   );
 } 
