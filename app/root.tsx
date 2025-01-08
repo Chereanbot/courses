@@ -3,6 +3,8 @@ import { ClerkApp } from "@clerk/remix";
 import { rootAuthLoader } from "@clerk/remix/ssr.server";
 import type { LoaderFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/remix";
 import "./tailwind.css";
 
 export const loader: LoaderFunction = (args) => rootAuthLoader(args, {
@@ -230,6 +232,8 @@ function App() {
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

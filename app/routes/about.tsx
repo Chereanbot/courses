@@ -235,14 +235,14 @@ export default function About() {
           </div>
         </section>
 
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setIsDarkMode(!isDarkMode)}
           className="fixed bottom-6 right-6 p-3 rounded-full shadow-lg bg-white text-gray-900 hover:shadow-xl transition-shadow duration-300"
-        >
+      >
           🌙
-        </button>
-      </div>
+      </button>
+    </div>
     </SharedLayout>
   );
 } 
